@@ -1,165 +1,88 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RCS | Quick Access Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <style>
+        /* [Keep all previous CSS styles] */
         body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
-        .glass-card {
-            background: white;
-            transition: all 0.2s ease-in-out;
-            border: 1px solid #e2e8f0;
-        }
-        .glass-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.05);
-            border-color: #0f172a;
-        }
+        .glass-card { background: white; transition: all 0.2s ease-in-out; border: 1px solid #e2e8f0; }
         .rcs-dark { background-color: #0f172a; }
-        .clock-label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; }
-        .clock-time { font-family: 'Courier New', Courier, monospace; font-weight: 600; }
-        .logo-img { height: 55px; width: auto; object-fit: contain; }
+        .search-input { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); }
+        #nexus-modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9); z-index: 100; align-items: center; justify-content: center; }
     </style>
 </head>
 <body class="min-h-screen pb-12">
 
-    <header class="rcs-dark text-white p-6 mb-8 shadow-xl">
-        <div class="max-w-7xl mx-auto flex flex-col lg:flex-row justify-between items-center">
-            <div class="flex items-center space-x-6">
-                <img src="https://i.postimg.cc/Gh8VdV9r/Untitled-Photoroom.png" alt="RCS Logo" class="logo-img">
-                <div class="border-l border-slate-700 pl-6">
-                    <h1 class="text-xl font-bold tracking-tight">ROYAL CLASSIFICATION SOCIETY</h1>
-                    <p class="text-blue-400 text-sm font-medium tracking-wide">Quick Access Dashboard</p>
-                    <p id="current-date" class="text-slate-400 text-xs mt-1 italic"></p>
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 lg:mt-0 bg-slate-800/40 p-4 rounded-xl border border-slate-700/50">
-                <div class="text-center px-3">
-                    <p class="clock-label">Dubai (GST)</p>
-                    <p id="clock-dubai" class="clock-time text-emerald-400 text-lg"></p>
-                </div>
-                <div class="text-center px-3 border-l border-slate-700">
-                    <p class="clock-label">Iran (IRST)</p>
-                    <p id="clock-iran" class="clock-time text-emerald-400 text-lg"></p>
-                </div>
-                <div class="text-center px-3 border-l border-slate-700">
-                    <p class="clock-label">China (CST)</p>
-                    <p id="clock-china" class="clock-time text-emerald-400 text-lg"></p>
-                </div>
-                <div class="text-center px-3 border-l border-slate-700">
-                    <p class="clock-label">UTC</p>
-                    <p id="clock-utc" class="clock-time text-blue-400 text-lg"></p>
-                </div>
-            </div>
-        </div>
-    </header>
-
-    <main class="max-w-7xl mx-auto px-6">
+    <main class="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-4 gap-8">
         
-        <div class="mb-12">
-            <div class="flex items-center mb-6 space-x-2 border-b border-slate-200 pb-2">
-                <i data-lucide="anchor" class="text-slate-600 w-5 h-5"></i>
-                <h2 class="text-lg font-bold text-slate-800 uppercase tracking-wide">Maritime Operations</h2>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        <div class="lg:col-span-1">
+            <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm sticky top-6">
+                <div class="flex items-center space-x-2 mb-6 border-b pb-2">
+                    <i data-lucide="megaphone" class="text-orange-500 w-5 h-5"></i>
+                    <h2 class="text-sm font-bold text-slate-800 uppercase tracking-widest">Live Board</h2>
+                </div>
                 
-                <a href="https://posiden-project.streamlit.app/" target="_blank" class="glass-card p-5 rounded-xl flex items-center space-x-4">
-                    <div class="bg-red-50 p-3 rounded-lg text-red-600"><i data-lucide="shield-alert"></i></div>
-                    <div><h3 class="font-bold text-sm text-slate-800">POSEIDON</h3><p class="text-xs text-slate-500">Sanction Check</p></div>
-                </a>
+                <div class="mb-6">
+                    <textarea id="announcement-input" placeholder="Broadcast an update..." class="w-full text-xs border rounded-lg p-2 outline-none focus:ring-1 focus:ring-blue-500 bg-slate-50" rows="3"></textarea>
+                    <button id="post-btn" onclick="postToSheet()" class="w-full mt-2 bg-blue-600 text-white text-[10px] py-1.5 rounded-lg font-bold hover:bg-blue-700 transition">SEND TO TEAM</button>
+                </div>
 
-                <a href="https://rcsclass.digital" target="_blank" class="glass-card p-5 rounded-xl flex items-center space-x-4">
-                    <div class="bg-blue-50 p-3 rounded-lg text-blue-600"><i data-lucide="layers"></i></div>
-                    <div><h3 class="font-bold text-sm text-slate-800">RCS NEXUS</h3><p class="text-xs text-slate-500">Web App</p></div>
-                </a>
-
-                <a href="https://www.vesselfinder.com/" target="_blank" class="glass-card p-5 rounded-xl flex items-center space-x-4">
-                    <div class="bg-indigo-50 p-3 rounded-lg text-indigo-600"><i data-lucide="navigation"></i></div>
-                    <div><h3 class="font-bold text-sm text-slate-800">Vessel Finder</h3><p class="text-xs text-slate-500">AIS Tracking</p></div>
-                </a>
-
-                <a href="https://maritime.ihs.com/Account2/Index" target="_blank" class="glass-card p-5 rounded-xl flex items-center space-x-4">
-                    <div class="bg-cyan-50 p-3 rounded-lg text-cyan-600"><i data-lucide="database"></i></div>
-                    <div><h3 class="font-bold text-sm text-slate-800">Maritime Portal</h3><p class="text-xs text-slate-500">Sea Web</p></div>
-                </a>
-
-                <a href="https://vessel-classification-calc-dgcwm2ek2pfscvdkds4kea.streamlit.app/" target="_blank" class="glass-card p-5 rounded-xl flex items-center space-x-4">
-                    <div class="bg-emerald-50 p-3 rounded-lg text-emerald-600"><i data-lucide="calculator"></i></div>
-                    <div><h3 class="font-bold text-sm text-slate-800">Fee Calculator</h3><p class="text-xs text-slate-500">Vessel Classification</p></div>
-                </a>
+                <div id="announcement-list" class="space-y-4 max-h-[500px] overflow-y-auto pr-1">
+                    <p class="text-center text-xs text-slate-400">Loading feed...</p>
+                </div>
             </div>
         </div>
 
-        <div>
-            <div class="flex items-center mb-6 space-x-2 border-b border-slate-200 pb-2">
-                <i data-lucide="folder-kanban" class="text-slate-600 w-5 h-5"></i>
-                <h2 class="text-lg font-bold text-slate-800 uppercase tracking-wide">Workflow & Storage</h2>
-            </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                
-                <a href="https://workspace.google.com/" target="_blank" class="glass-card p-5 rounded-xl flex items-center space-x-4">
-                    <div class="bg-orange-50 p-3 rounded-lg text-orange-600"><i data-lucide="mail"></i></div>
-                    <div><h3 class="font-bold text-sm text-slate-800">Google Workspace</h3><p class="text-xs text-slate-500">Communication</p></div>
-                </a>
-
-                <a href="https://workspace.google.com/products/drive/" target="_blank" class="glass-card p-5 rounded-xl flex items-center space-x-4">
-                    <div class="bg-yellow-50 p-3 rounded-lg text-yellow-700"><i data-lucide="share-2"></i></div>
-                    <div><h3 class="font-bold text-sm text-slate-800">Google Drive</h3><p class="text-xs text-slate-500">Cross-Office Files</p></div>
-                </a>
-
-                <a href="https://os5.mycloud.com/" target="_blank" class="glass-card p-5 rounded-xl flex items-center space-x-4">
-                    <div class="bg-slate-100 p-3 rounded-lg text-slate-700"><i data-lucide="cloud"></i></div>
-                    <div><h3 class="font-bold text-sm text-slate-800">OS5 MyCloud</h3><p class="text-xs text-slate-500">Network Storage</p></div>
-                </a>
-
-                <a href="https://rcsclass.org" target="_blank" class="glass-card p-5 rounded-xl flex items-center space-x-4">
-                    <div class="bg-blue-100 p-3 rounded-lg text-blue-800"><i data-lucide="globe"></i></div>
-                    <div><h3 class="font-bold text-sm text-slate-800">RCS Website</h3><p class="text-xs text-slate-500">Public Portal</p></div>
-                </a>
-            </div>
-        </div>
-    </main>
-
-    <footer class="mt-20 py-8 text-center text-slate-400 text-xs border-t border-slate-200">
-        &copy; 2024 Royal Classification Society | Internal Access Dashboard
-    </footer>
+        </main>
 
     <script>
-        // Initialize Icons
-        lucide.createIcons();
+        const SHEET_URL = "https://script.google.com/macros/s/AKfycbwD3HO8OjSwQvedgToVJYWXKtGCGYTsOSWGGoOjXV5waGAcKJDjCNsCXqhZYLJCICeU9g/exec";
 
-        // Clock Functionality
-        function updateClocks() {
-            const now = new Date();
-            
-            // Format Current Date
-            const dateOptions = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('current-date').innerText = now.toLocaleDateString('en-US', dateOptions);
-
-            // Reusable time options
-            const timeOptions = (tz) => ({
-                timeZone: tz,
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-                hour12: false
-            });
-
-            // Update individual clocks
-            document.getElementById('clock-dubai').innerText = now.toLocaleTimeString('en-GB', timeOptions('Asia/Dubai'));
-            document.getElementById('clock-iran').innerText = now.toLocaleTimeString('en-GB', timeOptions('Asia/Tehran'));
-            document.getElementById('clock-china').innerText = now.toLocaleTimeString('en-GB', timeOptions('Asia/Shanghai'));
-            document.getElementById('clock-utc').innerText = now.toLocaleTimeString('en-GB', { ...timeOptions('UTC'), hour12: false });
+        // Fetch announcements
+        async function loadAnnouncements() {
+            try {
+                const response = await fetch(SHEET_URL);
+                const data = await response.json();
+                const list = document.getElementById('announcement-list');
+                
+                list.innerHTML = data.map(post => `
+                    <div class="p-3 bg-slate-50 rounded-lg border-l-4 border-blue-500">
+                        <p class="text-[9px] font-bold text-blue-600 uppercase">${post[0]}</p>
+                        <p class="text-xs text-slate-700 leading-relaxed">${post[1]}</p>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error("Error loading sheet", e);
+            }
         }
 
-        // Run clocks immediately and then every second
-        setInterval(updateClocks, 1000);
-        updateClocks();
+        // Post new announcement
+        async function postToSheet() {
+            const input = document.getElementById('announcement-input');
+            const btn = document.getElementById('post-btn');
+            if (!input.value.trim()) return;
+
+            btn.innerText = "SENDING...";
+            btn.disabled = true;
+
+            await fetch(SHEET_URL, {
+                method: "POST",
+                body: JSON.stringify({ message: input.value })
+            });
+
+            input.value = "";
+            btn.innerText = "SEND TO TEAM";
+            btn.disabled = false;
+            loadAnnouncements(); // Refresh feed
+        }
+
+        // Initial Load
+        lucide.createIcons();
+        loadAnnouncements();
+        setInterval(loadAnnouncements, 30000); // Refresh every 30 seconds
+
+        // [Keep all your existing Clock and Nexus functions here]
     </script>
 </body>
 </html>
