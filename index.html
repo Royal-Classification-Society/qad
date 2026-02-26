@@ -4,254 +4,993 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RCS | Quick Access Dashboard</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #f1f5f9; }
-        .glass-card { background: white; transition: all 0.2s ease-in-out; border: 1px solid #e2e8f0; }
-        .glass-card:hover { transform: translateY(-4px); box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.05); border-color: #0f172a; }
-        .rcs-dark { background-color: #0f172a; }
-        .clock-label { font-size: 0.65rem; text-transform: uppercase; color: #94a3b8; }
-        .clock-time { font-family: 'Courier New', monospace; font-weight: 600; }
-        .search-input { background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); transition: all 0.3s ease; }
-        .search-input:focus { background: white; color: #0f172a; outline: none; }
-        #nexus-modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9); z-index: 100; align-items: center; justify-content: center; }
-        #announcement-list::-webkit-scrollbar { width: 4px; }
-        #announcement-list::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --navy: #0a1628;
+            --navy-mid: #112240;
+            --navy-light: #1e3a5f;
+            --ocean: #0d3b6e;
+            --teal: #0e7490;
+            --gold: #c9a84c;
+            --gold-light: #f0c96e;
+            --slate: #94a3b8;
+            --cream: #f8f5f0;
+            --white: #ffffff;
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background-color: var(--navy);
+            color: var(--white);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ============================
+           OCEAN CANVAS BACKGROUND
+        ============================ */
+        #ocean-canvas {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.6;
+        }
+
+        /* ============================
+           HEADER
+        ============================ */
+        header {
+            position: relative;
+            z-index: 10;
+            background: linear-gradient(180deg, rgba(10,22,40,0.98) 0%, rgba(10,22,40,0.85) 100%);
+            border-bottom: 1px solid rgba(201,168,76,0.3);
+            padding: 0 2rem;
+        }
+
+        .header-inner {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 1.25rem 0;
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            align-items: center;
+            gap: 2rem;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .logo-section img {
+            height: 48px;
+            width: auto;
+            filter: brightness(1.1);
+        }
+
+        .logo-divider {
+            width: 1px;
+            height: 40px;
+            background: linear-gradient(to bottom, transparent, var(--gold), transparent);
+        }
+
+        .brand-text h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--gold-light);
+        }
+
+        .brand-text p {
+            font-size: 0.65rem;
+            color: var(--slate);
+            letter-spacing: 0.05em;
+            font-style: italic;
+            margin-top: 2px;
+        }
+
+        /* Search */
+        .search-wrap {
+            position: relative;
+        }
+
+        .search-wrap input {
+            width: 100%;
+            background: rgba(255,255,255,0.06);
+            border: 1px solid rgba(201,168,76,0.2);
+            border-radius: 100px;
+            padding: 0.6rem 1rem 0.6rem 2.5rem;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.8rem;
+            color: var(--white);
+            transition: all 0.3s;
+        }
+
+        .search-wrap input::placeholder { color: var(--slate); }
+        .search-wrap input:focus {
+            outline: none;
+            background: rgba(255,255,255,0.1);
+            border-color: var(--gold);
+            box-shadow: 0 0 0 3px rgba(201,168,76,0.1);
+        }
+
+        .search-wrap svg {
+            position: absolute;
+            left: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--slate);
+            width: 14px; height: 14px;
+        }
+
+        /* Clocks */
+        .clocks {
+            display: flex;
+            gap: 0;
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .clock-item {
+            padding: 0.6rem 1rem;
+            text-align: center;
+            border-right: 1px solid rgba(255,255,255,0.07);
+        }
+
+        .clock-item:last-child { border-right: none; }
+
+        .clock-label {
+            font-size: 0.55rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--slate);
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .clock-time {
+            font-family: 'DM Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--gold-light);
+        }
+
+        .clock-time.utc { color: #67e8f9; }
+
+        /* ============================
+           HERO SHIP SCENE
+        ============================ */
+        .ship-scene {
+            position: relative;
+            height: 140px;
+            overflow: hidden;
+            z-index: 5;
+        }
+
+        #wave-canvas {
+            position: absolute;
+            bottom: 0; left: 0;
+            width: 100%; height: 100%;
+        }
+
+        .ship-container {
+            position: absolute;
+            bottom: 30px;
+            left: -180px;
+            animation: sailAcross 28s linear infinite;
+            z-index: 2;
+        }
+
+        .ship-container-2 {
+            position: absolute;
+            bottom: 24px;
+            right: -120px;
+            animation: sailBack 40s linear infinite;
+            transform: scaleX(-1);
+            z-index: 2;
+        }
+
+        @keyframes sailAcross {
+            0%   { left: -200px; }
+            100% { left: 110%; }
+        }
+
+        @keyframes sailBack {
+            0%   { right: -150px; }
+            100% { right: 110%; }
+        }
+
+        .ship-bob { animation: bob 3s ease-in-out infinite; }
+        .ship-bob-2 { animation: bob 4s ease-in-out infinite; }
+
+        @keyframes bob {
+            0%, 100% { transform: translateY(0px) rotate(-0.5deg); }
+            50% { transform: translateY(-4px) rotate(0.5deg); }
+        }
+
+        /* ============================
+           MAIN LAYOUT
+        ============================ */
+        main {
+            position: relative;
+            z-index: 10;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem 2rem 4rem;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 2rem;
+        }
+
+        /* ============================
+           LIVE BOARD
+        ============================ */
+        .live-board {
+            position: sticky;
+            top: 1.5rem;
+            height: fit-content;
+        }
+
+        .panel {
+            background: rgba(17,34,64,0.85);
+            border: 1px solid rgba(201,168,76,0.15);
+            border-radius: 16px;
+            backdrop-filter: blur(12px);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 1rem 1.25rem;
+            border-bottom: 1px solid rgba(201,168,76,0.12);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(201,168,76,0.05);
+        }
+
+        .panel-header .dot {
+            width: 7px; height: 7px;
+            border-radius: 50%;
+            background: var(--gold);
+            box-shadow: 0 0 6px var(--gold);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 6px var(--gold); }
+            50% { opacity: 0.5; box-shadow: 0 0 12px var(--gold); }
+        }
+
+        .panel-header h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 0.75rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--gold-light);
+        }
+
+        .panel-body { padding: 1rem 1.25rem; }
+
+        textarea {
+            width: 100%;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 0.7rem;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.75rem;
+            color: var(--white);
+            resize: none;
+            transition: all 0.3s;
+        }
+
+        textarea::placeholder { color: var(--slate); }
+        textarea:focus {
+            outline: none;
+            border-color: rgba(201,168,76,0.4);
+            background: rgba(255,255,255,0.08);
+        }
+
+        .post-btn {
+            width: 100%;
+            margin-top: 0.5rem;
+            padding: 0.6rem;
+            background: linear-gradient(135deg, var(--gold) 0%, #a8792c 100%);
+            border: none;
+            border-radius: 8px;
+            color: var(--navy);
+            font-family: 'DM Sans', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .post-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(201,168,76,0.4);
+        }
+
+        .divider { 
+            height: 1px; 
+            background: rgba(255,255,255,0.07); 
+            margin: 0.75rem 0; 
+        }
+
+        #announcement-list {
+            max-height: 400px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+
+        #announcement-list::-webkit-scrollbar { width: 3px; }
+        #announcement-list::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.3); border-radius: 10px; }
+
+        .announce-item {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-left: 3px solid var(--gold);
+            border-radius: 6px;
+            padding: 0.6rem 0.75rem;
+        }
+
+        .announce-item .time {
+            font-size: 0.6rem;
+            font-weight: 600;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--gold);
+            margin-bottom: 3px;
+        }
+
+        .announce-item .msg {
+            font-size: 0.75rem;
+            color: rgba(255,255,255,0.8);
+            line-height: 1.4;
+        }
+
+        /* ============================
+           CARD GRID
+        ============================ */
+        .content-area { display: flex; flex-direction: column; gap: 2rem; }
+
+        .section-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .section-label .line {
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(to right, rgba(201,168,76,0.4), transparent);
+        }
+
+        .section-label span {
+            font-family: 'Playfair Display', serif;
+            font-size: 0.7rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--gold);
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+            gap: 1rem;
+        }
+
+        .card-grid-3 {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 1rem;
+        }
+
+        .card {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            padding: 1rem 1.1rem;
+            background: rgba(17,34,64,0.7);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 14px;
+            text-decoration: none;
+            color: var(--white);
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            backdrop-filter: blur(8px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(201,168,76,0.06) 0%, transparent 60%);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .card:hover::before { opacity: 1; }
+
+        .card:hover {
+            transform: translateY(-3px);
+            border-color: rgba(201,168,76,0.4);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.3), 0 0 0 1px rgba(201,168,76,0.1);
+        }
+
+        .card-icon {
+            width: 42px; height: 42px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .card-icon svg { width: 20px; height: 20px; }
+
+        .card-info h3 {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .card-info p {
+            font-size: 0.65rem;
+            color: var(--slate);
+        }
+
+        /* Icon color themes */
+        .ic-blue   { background: rgba(59,130,246,0.15); color: #60a5fa; }
+        .ic-red    { background: rgba(239,68,68,0.12); color: #f87171; }
+        .ic-cyan   { background: rgba(14,116,144,0.2); color: #22d3ee; }
+        .ic-indigo { background: rgba(99,102,241,0.15); color: #a5b4fc; }
+        .ic-green  { background: rgba(34,197,94,0.12); color: #4ade80; }
+        .ic-yellow { background: rgba(234,179,8,0.12); color: #facc15; }
+        .ic-slate  { background: rgba(148,163,184,0.1); color: #94a3b8; }
+        .ic-gold   { background: rgba(201,168,76,0.15); color: var(--gold-light); }
+        .ic-dark   { background: rgba(255,255,255,0.08); color: var(--slate); }
+        .ic-globe  { background: rgba(255,255,255,0.06); color: var(--white); }
+
+        /* NEXUS special card */
+        .nexus-card {
+            background: linear-gradient(135deg, rgba(30,58,95,0.9) 0%, rgba(10,22,40,0.95) 100%);
+            border-color: rgba(201,168,76,0.3);
+        }
+
+        .nexus-card:hover {
+            border-color: var(--gold);
+            box-shadow: 0 8px 32px rgba(201,168,76,0.2), 0 0 0 1px rgba(201,168,76,0.2);
+        }
+
+        /* ============================
+           STATUS BAR
+        ============================ */
+        .status-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 1.25rem;
+            background: rgba(255,255,255,0.03);
+            border-top: 1px solid rgba(255,255,255,0.06);
+            font-size: 0.6rem;
+            color: var(--slate);
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .status-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 6px #22c55e;
+            display: inline-block;
+            margin-right: 5px;
+            animation: pulse 2s infinite;
+        }
+
+        /* ============================
+           RESPONSIVE
+        ============================ */
+        @media (max-width: 1024px) {
+            main { grid-template-columns: 1fr; }
+            .live-board { position: static; }
+            .header-inner { grid-template-columns: 1fr; justify-items: center; gap: 1rem; }
+        }
+
+        @media (max-width: 600px) {
+            .card-grid, .card-grid-3 { grid-template-columns: 1fr 1fr; }
+            main { padding: 1rem 1rem 3rem; }
+        }
+
+        /* Fade-in animation */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeUp 0.5s ease forwards;
+        }
+
+        @keyframes fadeUp {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .fade-up:nth-child(1) { animation-delay: 0.1s; }
+        .fade-up:nth-child(2) { animation-delay: 0.2s; }
+        .fade-up:nth-child(3) { animation-delay: 0.3s; }
+        .fade-up:nth-child(4) { animation-delay: 0.4s; }
+        .fade-up:nth-child(5) { animation-delay: 0.5s; }
+        .fade-up:nth-child(6) { animation-delay: 0.6s; }
     </style>
 </head>
-<body class="min-h-screen pb-12">
+<body>
 
-    <div id="nexus-modal">
-        <div class="bg-white p-8 rounded-2xl shadow-2xl w-80 text-center">
-            <div class="mx-auto mb-4 text-blue-600 flex justify-center">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+<!-- Animated Ocean Canvas -->
+<canvas id="ocean-canvas"></canvas>
+
+<header>
+    <div class="header-inner">
+        <div class="logo-section">
+            <img src="https://i.postimg.cc/Gh8VdV9r/Untitled-Photoroom.png" alt="RCS Logo" onerror="this.style.display='none'">
+            <div class="logo-divider"></div>
+            <div class="brand-text">
+                <h1>Royal Classification Society</h1>
+                <p id="current-date"></p>
             </div>
-            <h3 class="text-lg font-bold mb-2">Nexus Gateway</h3>
-            <p class="text-xs text-slate-500 mb-4">Enter Restricted Access Password</p>
-            <input type="password" id="nexus-pw" class="w-full border p-2 rounded mb-4 outline-none focus:ring-2 focus:ring-blue-500 text-center">
-            <div class="flex space-x-2">
-                <button onclick="closeModal()" class="flex-1 text-xs text-slate-500">Cancel</button>
-                <button onclick="verifyNexus()" class="flex-1 bg-blue-600 text-white py-2 rounded text-xs font-bold">Access</button>
+        </div>
+
+        <form action="https://www.google.com/search" method="GET" target="_blank" class="search-wrap">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" name="q" placeholder="Search the web...">
+        </form>
+
+        <div class="clocks">
+            <div class="clock-item">
+                <span class="clock-label">Dubai</span>
+                <span class="clock-time" id="clock-dubai">--:--:--</span>
             </div>
-            <p id="pw-error" class="text-red-500 text-[10px] mt-2 hidden">Invalid Password</p>
+            <div class="clock-item">
+                <span class="clock-label">Iran</span>
+                <span class="clock-time" id="clock-iran">--:--:--</span>
+            </div>
+            <div class="clock-item">
+                <span class="clock-label">China</span>
+                <span class="clock-time" id="clock-china">--:--:--</span>
+            </div>
+            <div class="clock-item">
+                <span class="clock-label">UTC</span>
+                <span class="clock-time utc" id="clock-utc">--:--:--</span>
+            </div>
+        </div>
+    </div>
+</header>
+
+<!-- Ship Scene -->
+<div class="ship-scene">
+    <canvas id="wave-canvas"></canvas>
+
+    <!-- Ship 1 (large cargo) -->
+    <div class="ship-container">
+        <div class="ship-bob">
+            <svg width="160" height="55" viewBox="0 0 160 55" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Hull -->
+                <path d="M10,38 L20,48 L140,48 L150,38 Z" fill="#1e3a5f" stroke="rgba(201,168,76,0.4)" stroke-width="0.8"/>
+                <!-- Deck -->
+                <rect x="18" y="28" width="124" height="12" rx="2" fill="#112240" stroke="rgba(201,168,76,0.3)" stroke-width="0.8"/>
+                <!-- Containers -->
+                <rect x="22" y="18" width="20" height="12" rx="1" fill="#c9a84c" opacity="0.8"/>
+                <rect x="44" y="18" width="20" height="12" rx="1" fill="#1e3a5f" stroke="#c9a84c" stroke-width="0.5" opacity="0.9"/>
+                <rect x="66" y="18" width="20" height="12" rx="1" fill="#c9a84c" opacity="0.7"/>
+                <rect x="88" y="18" width="20" height="12" rx="1" fill="#1e3a5f" stroke="#c9a84c" stroke-width="0.5" opacity="0.9"/>
+                <!-- Bridge -->
+                <rect x="112" y="10" width="24" height="20" rx="2" fill="#0d3b6e" stroke="rgba(201,168,76,0.5)" stroke-width="0.8"/>
+                <!-- Windows -->
+                <rect x="115" y="13" width="4" height="4" rx="0.5" fill="rgba(240,201,110,0.6)"/>
+                <rect x="121" y="13" width="4" height="4" rx="0.5" fill="rgba(240,201,110,0.6)"/>
+                <rect x="127" y="13" width="4" height="4" rx="0.5" fill="rgba(240,201,110,0.6)"/>
+                <!-- Funnel -->
+                <rect x="122" y="4" width="8" height="10" rx="1" fill="#c9a84c"/>
+                <!-- Smoke -->
+                <circle cx="126" cy="2" r="2" fill="rgba(148,163,184,0.3)"/>
+                <circle cx="129" cy="0" r="1.5" fill="rgba(148,163,184,0.2)"/>
+                <!-- Bow wave -->
+                <path d="M10,42 C5,45 2,48 0,50" stroke="rgba(255,255,255,0.3)" stroke-width="1" fill="none"/>
+                <!-- Anchor chain -->
+                <circle cx="25" cy="42" r="2" fill="rgba(201,168,76,0.4)" stroke="rgba(201,168,76,0.6)" stroke-width="0.5"/>
+            </svg>
         </div>
     </div>
 
-    <header class="rcs-dark text-white p-6 mb-8 shadow-xl">
-        <div class="max-w-7xl mx-auto flex flex-col lg:flex-row justify-between items-center gap-6">
-            <div class="flex items-center space-x-6">
-                <img src="https://i.postimg.cc/Gh8VdV9r/Untitled-Photoroom.png" alt="RCS Logo" class="h-12 w-auto" onerror="this.src='https://via.placeholder.com/100x40?text=RCS+LOGO'">
-                <div class="border-l border-slate-700 pl-6">
-                    <h1 class="text-xl font-bold tracking-tight uppercase">Royal Classification Society</h1>
-                    <p id="current-date" class="text-slate-400 text-xs italic"></p>
+    <!-- Ship 2 (smaller tanker, opposite direction) -->
+    <div class="ship-container-2" style="animation-delay: -15s; bottom: 18px;">
+        <div class="ship-bob-2">
+            <svg width="100" height="38" viewBox="0 0 100 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <!-- Hull -->
+                <path d="M8,26 L15,34 L85,34 L92,26 Z" fill="#0d3b6e" stroke="rgba(201,168,76,0.3)" stroke-width="0.8"/>
+                <!-- Deck -->
+                <rect x="14" y="18" width="72" height="9" rx="1.5" fill="#0a1628" stroke="rgba(201,168,76,0.2)" stroke-width="0.7"/>
+                <!-- Tank domes -->
+                <ellipse cx="28" cy="18" rx="8" ry="4" fill="#112240" stroke="rgba(201,168,76,0.3)" stroke-width="0.5"/>
+                <ellipse cx="48" cy="18" rx="8" ry="4" fill="#112240" stroke="rgba(201,168,76,0.3)" stroke-width="0.5"/>
+                <ellipse cx="68" cy="18" rx="8" ry="4" fill="#112240" stroke="rgba(201,168,76,0.3)" stroke-width="0.5"/>
+                <!-- Bridge -->
+                <rect x="14" y="8" width="16" height="13" rx="1.5" fill="#0d3b6e" stroke="rgba(201,168,76,0.4)" stroke-width="0.7"/>
+                <!-- Windows -->
+                <rect x="17" y="11" width="3" height="3" rx="0.5" fill="rgba(240,201,110,0.5)"/>
+                <rect x="22" y="11" width="3" height="3" rx="0.5" fill="rgba(240,201,110,0.5)"/>
+                <!-- Funnel -->
+                <rect x="16" y="3" width="5" height="8" rx="1" fill="#c9a84c"/>
+            </svg>
+        </div>
+    </div>
+</div>
+
+<main>
+    <!-- Live Board Sidebar -->
+    <aside class="live-board">
+        <div class="panel">
+            <div class="panel-header">
+                <span class="dot"></span>
+                <h2>Live Board</h2>
+            </div>
+            <div class="panel-body">
+                <textarea id="announcement-input" placeholder="Post a team update..." rows="3"></textarea>
+                <button class="post-btn" onclick="postToSheet()" id="post-btn">⇡ Post Update</button>
+                <div class="divider"></div>
+                <div id="announcement-list">
+                    <p style="text-align:center; font-size:0.7rem; color:var(--slate); font-style:italic;">Syncing live feed...</p>
                 </div>
             </div>
-
-            <div class="w-full lg:max-w-md">
-                <form action="https://www.google.com/search" method="GET" target="_blank" class="relative">
-                    <input type="text" name="q" placeholder="Search Google..." class="search-input w-full py-2.5 pl-10 pr-4 rounded-full text-sm text-white">
-                    <div class="absolute left-3 top-3 text-slate-400">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-                    </div>
-                </form>
-            </div>
-            
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3 bg-slate-800/40 p-3 rounded-xl border border-slate-700/50">
-                <div class="text-center px-2"><p class="clock-label">Dubai</p><p id="clock-dubai" class="clock-time text-emerald-400 text-sm"></p></div>
-                <div class="text-center px-2 border-l border-slate-700"><p class="clock-label">Iran</p><p id="clock-iran" class="clock-time text-emerald-400 text-sm"></p></div>
-                <div class="text-center px-2 border-l border-slate-700"><p class="clock-label">China</p><p id="clock-china" class="clock-time text-emerald-400 text-sm"></p></div>
-                <div class="text-center px-2 border-l border-slate-700"><p class="clock-label">UTC</p><p id="clock-utc" class="clock-time text-blue-400 text-sm"></p></div>
+            <div class="status-bar">
+                <span><span class="status-dot"></span>Systems Operational</span>
+                <span>RCS MARITIME OPS</span>
             </div>
         </div>
-    </header>
+    </aside>
 
-    <main class="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-4 gap-8">
-        
-        <div class="lg:col-span-1">
-            <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm sticky top-6">
-                <div class="flex items-center space-x-2 mb-6 border-b pb-2">
-                    <div class="text-orange-500">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
+    <!-- Main Content -->
+    <div class="content-area">
+
+        <!-- Maritime Operations -->
+        <section>
+            <div class="section-label">
+                <span>⚓ Maritime Operations</span>
+                <div class="line"></div>
+            </div>
+            <div class="card-grid">
+                <a href="https://rcsclass.digital" target="_blank" class="card nexus-card fade-up">
+                    <div class="card-icon ic-gold">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9"/></svg>
                     </div>
-                    <h2 class="text-sm font-bold text-slate-800 uppercase tracking-widest">Live Board</h2>
-                </div>
-                <div class="mb-6">
-                    <textarea id="announcement-input" placeholder="Update the team..." class="w-full text-xs border rounded-lg p-2 outline-none focus:ring-1 focus:ring-blue-500 bg-slate-50" rows="3"></textarea>
-                    <button id="post-btn" onclick="postToSheet()" class="w-full mt-2 bg-blue-600 text-white text-[10px] py-1.5 rounded-lg font-bold hover:bg-blue-700 transition">POST UPDATE</button>
-                </div>
-                <div id="announcement-list" class="space-y-4 max-h-[500px] overflow-y-auto pr-1">
-                    <p class="text-center text-xs text-slate-400 italic">Syncing live feed...</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="lg:col-span-3 space-y-10">
-            
-            <div>
-                <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg> Maritime Operations
-                </h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    <button onclick="openNexus()" class="glass-card p-5 rounded-xl flex items-center space-x-4 w-full text-left">
-                        <div class="bg-blue-600 p-3 rounded-lg text-white">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9"/></svg>
-                        </div>
-                        <div><h3 class="font-bold text-sm">RCS NEXUS</h3><p class="text-xs text-slate-400 italic">Internal Access</p></div>
-                    </button>
-                    <a href="https://posiden-project.streamlit.app/" target="_blank" class="glass-card p-5 rounded-xl flex items-center space-x-4">
-                        <div class="bg-red-50 p-3 rounded-lg text-red-600">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                        </div>
-                        <div><h3 class="font-bold text-sm">POSEIDON</h3><p class="text-xs text-slate-500">Sanction Check</p></div>
-                    </a>
-                    <a href="https://maritime.ihs.com/Account2/Index" target="_blank" class="glass-card p-5 rounded-xl flex items-center space-x-4">
-                        <div class="bg-cyan-50 p-3 rounded-lg text-cyan-700">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>
-                        </div>
-                        <div><h3 class="font-bold text-sm">IHS Sea Web</h3><p class="text-xs text-slate-500">Maritime Portal</p></div>
-                    </a>
-                    <a href="https://www.vesselfinder.com/" target="_blank" class="glass-card p-5 rounded-xl flex items-center space-x-4">
-                        <div class="bg-indigo-50 p-3 rounded-lg text-indigo-600">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
-                        </div>
-                        <div><h3 class="font-bold text-sm">Vessel Finder</h3><p class="text-xs text-slate-500">AIS Tracking</p></div>
-                    </a>
-                    <a href="https://vessel-classification-calc-dgcwm2ek2pfscvdkds4kea.streamlit.app/" target="_blank" class="glass-card p-5 rounded-xl flex items-center space-x-4">
-                        <div class="bg-emerald-50 p-3 rounded-lg text-emerald-600">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="8" x2="16" y1="10" y2="10"/><line x1="8" x2="16" y1="14" y2="14"/><line x1="8" x2="16" y1="18" y2="18"/></svg>
-                        </div>
-                        <div><h3 class="font-bold text-sm">Fee Calculator</h3><p class="text-xs text-slate-500">Classification</p></div>
-                    </a>
-                </div>
-            </div>
-
-            <div>
-                <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg> Communication & Tech
-                </h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <a href="https://mail.google.com/" target="_blank" class="glass-card p-5 rounded-xl flex items-center space-x-4">
-                        <div class="bg-red-50 p-3 rounded-lg text-red-600">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
-                        </div>
-                        <div><h3 class="font-bold text-sm">Gmail</h3><p class="text-xs text-slate-500">Professional</p></div>
-                    </a>
-                    <a href="https://web.whatsapp.com/" target="_blank" class="glass-card p-5 rounded-xl flex items-center space-x-4">
-                        <div class="bg-green-50 p-3 rounded-lg text-green-600">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-                        </div>
-                        <div><h3 class="font-bold text-sm">WhatsApp</h3><p class="text-xs text-slate-500">Instant Access</p></div>
-                    </a>
-                    <a href="https://github.com/" target="_blank" class="glass-card p-5 rounded-xl flex items-center space-x-4">
-                        <div class="bg-slate-800 p-3 rounded-lg text-white">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
-                        </div>
-                        <div><h3 class="font-bold text-sm">GitHub</h3><p class="text-xs text-slate-500">Development</p></div>
-                    </a>
-                </div>
-            </div>
-
-            <div>
-                <h2 class="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4 flex items-center gap-2">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="8" x="2" y="2" rx="2" ry="2"/><rect width="20" height="8" x="2" y="14" rx="2" ry="2"/><line x1="6" x2="6.01" y1="6" y2="6"/><line x1="6" x2="6.01" y1="18" y2="18"/></svg> Infrastructure
-                </h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <a href="https://drive.google.com" target="_blank" class="glass-card p-5 rounded-xl flex items-center space-x-4">
-                        <div class="bg-yellow-50 p-3 rounded-lg text-yellow-600">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
-                        </div>
-                        <div><h3 class="font-bold text-sm">Google Drive</h3><p class="text-xs text-slate-500">File Storage</p></div>
-                    </a>
-                    <a href="https://os5.mycloud.com/" target="_blank" class="glass-card p-5 rounded-xl flex items-center space-x-4">
-                        <div class="bg-slate-100 p-3 rounded-lg text-slate-700">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a3.5 3.5 0 0 0 0-7h-1.5a7 7 0 1 0-11.7 6.9"/></svg>
-                        </div>
-                        <div><h3 class="font-bold text-sm">MyCloud</h3><p class="text-xs text-slate-500">WD OS5</p></div>
-                    </a>
-                    <a href="https://rcsclass.org" target="_blank" class="glass-card p-5 rounded-xl flex items-center space-x-4 border-2 border-slate-200">
-                        <div class="bg-slate-800 p-3 rounded-lg text-white">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-                        </div>
-                        <div><h3 class="font-bold text-sm">RCS Website</h3><p class="text-xs text-slate-400">Official Portal</p></div>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <script>
-        const SHEET_URL = "https://script.google.com/macros/s/AKfycbwD3HO8OjSwQvedgToVJYWXKtGCGYTsOSWGGoOjXV5waGAcKJDjCNsCXqhZYLJCICeU9g/exec";
-
-        async function loadAnnouncements() {
-            try {
-                const response = await fetch(SHEET_URL);
-                const data = await response.json();
-                const list = document.getElementById('announcement-list');
-                if(data.length === 0) {
-                    list.innerHTML = `<p class="text-center text-xs text-slate-400">No updates.</p>`;
-                    return;
-                }
-                list.innerHTML = data.map(post => `
-                    <div class="p-3 bg-slate-50 rounded-lg border-l-4 border-blue-500 shadow-sm">
-                        <p class="text-[9px] font-bold text-blue-600 uppercase mb-1">${post[0]}</p>
-                        <p class="text-xs text-slate-700 font-medium">${post[1]}</p>
+                    <div class="card-info">
+                        <h3>RCS Nexus</h3>
+                        <p>Internal Access</p>
                     </div>
-                `).join('');
-            } catch (e) { 
-                console.log("Sheet error"); 
-                document.getElementById('announcement-list').innerHTML = `<p class="text-center text-xs text-red-400">Sync Error</p>`;
-            }
-        }
+                </a>
+                <a href="https://posiden-project.streamlit.app/" target="_blank" class="card fade-up">
+                    <div class="card-icon ic-red">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    </div>
+                    <div class="card-info">
+                        <h3>Poseidon</h3>
+                        <p>Sanction Check</p>
+                    </div>
+                </a>
+                <a href="https://maritime.ihs.com/Account2/Index" target="_blank" class="card fade-up">
+                    <div class="card-icon ic-cyan">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/></svg>
+                    </div>
+                    <div class="card-info">
+                        <h3>IHS Sea Web</h3>
+                        <p>Maritime Portal</p>
+                    </div>
+                </a>
+                <a href="https://www.vesselfinder.com/" target="_blank" class="card fade-up">
+                    <div class="card-icon ic-indigo">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+                    </div>
+                    <div class="card-info">
+                        <h3>Vessel Finder</h3>
+                        <p>AIS Tracking</p>
+                    </div>
+                </a>
+                <a href="https://vessel-classification-calc-dgcwm2ek2pfscvdkds4kea.streamlit.app/" target="_blank" class="card fade-up">
+                    <div class="card-icon ic-green">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="8" x2="16" y1="10" y2="10"/><line x1="8" x2="16" y1="14" y2="14"/><line x1="8" x2="16" y1="18" y2="18"/></svg>
+                    </div>
+                    <div class="card-info">
+                        <h3>Fee Calculator</h3>
+                        <p>Classification</p>
+                    </div>
+                </a>
+            </div>
+        </section>
 
-        async function postToSheet() {
-            const input = document.getElementById('announcement-input');
-            const btn = document.getElementById('post-btn');
-            if (!input.value.trim()) return;
-            btn.innerText = "...";
-            btn.disabled = true;
-            try {
-                await fetch(SHEET_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ message: input.value }) });
-                input.value = "";
-                setTimeout(loadAnnouncements, 2000);
-            } catch (e) { alert("Error"); } finally {
-                btn.innerText = "POST UPDATE";
-                btn.disabled = false;
-            }
-        }
+        <!-- Communication -->
+        <section>
+            <div class="section-label">
+                <span>📡 Communication & Tech</span>
+                <div class="line"></div>
+            </div>
+            <div class="card-grid-3">
+                <a href="https://mail.google.com/" target="_blank" class="card fade-up">
+                    <div class="card-icon ic-red">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                    </div>
+                    <div class="card-info">
+                        <h3>Gmail</h3>
+                        <p>Professional Email</p>
+                    </div>
+                </a>
+                <a href="https://web.whatsapp.com/" target="_blank" class="card fade-up">
+                    <div class="card-icon ic-green">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                    </div>
+                    <div class="card-info">
+                        <h3>WhatsApp</h3>
+                        <p>Instant Messaging</p>
+                    </div>
+                </a>
+                <a href="https://github.com/" target="_blank" class="card fade-up">
+                    <div class="card-icon ic-dark">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
+                    </div>
+                    <div class="card-info">
+                        <h3>GitHub</h3>
+                        <p>Development</p>
+                    </div>
+                </a>
+            </div>
+        </section>
 
-        function openNexus() { document.getElementById('nexus-modal').style.display = 'flex'; }
-        function closeModal() { 
-            document.getElementById('nexus-modal').style.display = 'none'; 
-            document.getElementById('nexus-pw').value = "";
-            document.getElementById('pw-error').classList.add('hidden');
-        }
-        function verifyNexus() {
-            if (document.getElementById('nexus-pw').value === "RCS2026@") {
-                window.open("https://rcsclass.digital", "_blank");
-                closeModal();
-            } else { document.getElementById('pw-error').classList.remove('hidden'); }
-        }
+        <!-- Infrastructure -->
+        <section>
+            <div class="section-label">
+                <span>🗄 Infrastructure</span>
+                <div class="line"></div>
+            </div>
+            <div class="card-grid-3">
+                <a href="https://drive.google.com" target="_blank" class="card fade-up">
+                    <div class="card-icon ic-yellow">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/></svg>
+                    </div>
+                    <div class="card-info">
+                        <h3>Google Drive</h3>
+                        <p>File Storage</p>
+                    </div>
+                </a>
+                <a href="https://os5.mycloud.com/" target="_blank" class="card fade-up">
+                    <div class="card-icon ic-slate">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19a3.5 3.5 0 0 0 0-7h-1.5a7 7 0 1 0-11.7 6.9"/></svg>
+                    </div>
+                    <div class="card-info">
+                        <h3>MyCloud</h3>
+                        <p>WD OS5</p>
+                    </div>
+                </a>
+                <a href="https://rcsclass.org" target="_blank" class="card fade-up">
+                    <div class="card-icon ic-globe">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" x2="22" y1="12" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                    </div>
+                    <div class="card-info">
+                        <h3>RCS Website</h3>
+                        <p>Official Portal</p>
+                    </div>
+                </a>
+            </div>
+        </section>
 
-        function updateClocks() {
-            const now = new Date();
-            const timeOptions = (tz) => ({ timeZone: tz, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
-            document.getElementById('current-date').innerText = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            document.getElementById('clock-dubai').innerText = now.toLocaleTimeString('en-GB', timeOptions('Asia/Dubai'));
-            document.getElementById('clock-iran').innerText = now.toLocaleTimeString('en-GB', timeOptions('Asia/Tehran'));
-            document.getElementById('clock-china').innerText = now.toLocaleTimeString('en-GB', timeOptions('Asia/Shanghai'));
-            document.getElementById('clock-utc').innerText = now.toLocaleTimeString('en-GB', { ...timeOptions('UTC') });
-        }
+    </div>
+</main>
 
-        // Start everything
-        updateClocks();
-        loadAnnouncements();
-        setInterval(updateClocks, 1000);
-        setInterval(loadAnnouncements, 60000);
+<script>
+    // ==============================
+    // OCEAN CANVAS PARTICLES
+    // ==============================
+    const canvas = document.getElementById('ocean-canvas');
+    const ctx = canvas.getContext('2d');
 
-        document.getElementById('nexus-pw').addEventListener("keypress", (e) => {
-            if (e.key === "Enter") verifyNexus();
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    const stars = Array.from({length: 120}, () => ({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight * 0.5,
+        r: Math.random() * 1.2,
+        o: Math.random() * 0.6 + 0.2,
+        speed: Math.random() * 0.003 + 0.001
+    }));
+
+    function drawStars(t) {
+        stars.forEach(s => {
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(255,255,255,${s.o * (0.7 + 0.3 * Math.sin(t * s.speed * 100))})`;
+            ctx.fill();
         });
-    </script>
+    }
+
+    // Subtle ocean gradient
+    function drawOcean() {
+        const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        grad.addColorStop(0, 'rgba(10,22,40,0)');
+        grad.addColorStop(0.3, 'rgba(10,22,40,0.05)');
+        grad.addColorStop(1, 'rgba(13,59,110,0.1)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+
+    let frame = 0;
+    function animate() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        drawOcean();
+        drawStars(frame * 0.01);
+        frame++;
+        requestAnimationFrame(animate);
+    }
+    animate();
+
+    // ==============================
+    // CLOCKS
+    // ==============================
+    function updateClocks() {
+        const now = new Date();
+        const fmt = (tz) => now.toLocaleTimeString('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+        document.getElementById('current-date').textContent = now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+        document.getElementById('clock-dubai').textContent = fmt('Asia/Dubai');
+        document.getElementById('clock-iran').textContent  = fmt('Asia/Tehran');
+        document.getElementById('clock-china').textContent = fmt('Asia/Shanghai');
+        document.getElementById('clock-utc').textContent   = fmt('UTC');
+    }
+    updateClocks();
+    setInterval(updateClocks, 1000);
+
+    // ==============================
+    // LIVE BOARD
+    // ==============================
+    const SHEET_URL = "https://script.google.com/macros/s/AKfycbwD3HO8OjSwQvedgToVJYWXKtGCGYTsOSWGGoOjXV5waGAcKJDjCNsCXqhZYLJCICeU9g/exec";
+
+    async function loadAnnouncements() {
+        try {
+            const res = await fetch(SHEET_URL);
+            const data = await res.json();
+            const list = document.getElementById('announcement-list');
+            if (!data.length) {
+                list.innerHTML = `<p style="text-align:center;font-size:0.7rem;color:var(--slate);font-style:italic;">No updates yet.</p>`;
+                return;
+            }
+            list.innerHTML = data.map(post => `
+                <div class="announce-item">
+                    <div class="time">${post[0]}</div>
+                    <div class="msg">${post[1]}</div>
+                </div>
+            `).join('');
+        } catch(e) {
+            document.getElementById('announcement-list').innerHTML = `<p style="text-align:center;font-size:0.7rem;color:#f87171;">Sync error</p>`;
+        }
+    }
+
+    async function postToSheet() {
+        const input = document.getElementById('announcement-input');
+        const btn = document.getElementById('post-btn');
+        if (!input.value.trim()) return;
+        btn.textContent = '...';
+        btn.disabled = true;
+        try {
+            await fetch(SHEET_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify({ message: input.value }) });
+            input.value = '';
+            setTimeout(loadAnnouncements, 2000);
+        } catch(e) {
+            alert('Error posting.');
+        } finally {
+            btn.textContent = '⇡ Post Update';
+            btn.disabled = false;
+        }
+    }
+
+    loadAnnouncements();
+    setInterval(loadAnnouncements, 60000);
+
+    // ==============================
+    // NATURAL WAVE CANVAS
+    // ==============================
+    const waveCanvas = document.getElementById('wave-canvas');
+    const wctx = waveCanvas.getContext('2d');
+
+    function resizeWaveCanvas() {
+        waveCanvas.width = waveCanvas.offsetWidth;
+        waveCanvas.height = waveCanvas.offsetHeight;
+    }
+    resizeWaveCanvas();
+    window.addEventListener('resize', resizeWaveCanvas);
+
+    // Wave layers: each has amplitude, frequency, speed, phase, color
+    const waveLayers = [
+        { amp: 10, freq: 0.018, speed: 0.6,  phase: 0,    color: 'rgba(14,116,144,0.35)',  yOffset: 0.45 },
+        { amp: 8,  freq: 0.025, speed: 0.9,  phase: 1.2,  color: 'rgba(13,80,140,0.45)',   yOffset: 0.52 },
+        { amp: 6,  freq: 0.032, speed: 1.2,  phase: 2.5,  color: 'rgba(10,50,100,0.55)',   yOffset: 0.60 },
+        { amp: 5,  freq: 0.040, speed: 0.5,  phase: 0.8,  color: 'rgba(10,34,80,0.70)',    yOffset: 0.68 },
+        { amp: 4,  freq: 0.055, speed: 1.5,  phase: 3.1,  color: 'rgba(10,22,40,0.88)',    yOffset: 0.78 },
+    ];
+
+    let wt = 0;
+
+    function drawWaves() {
+        const W = waveCanvas.width;
+        const H = waveCanvas.height;
+        wctx.clearRect(0, 0, W, H);
+
+        // Sky gradient above waves
+        const skyGrad = wctx.createLinearGradient(0, 0, 0, H * 0.5);
+        skyGrad.addColorStop(0, 'rgba(10,22,40,0)');
+        skyGrad.addColorStop(1, 'rgba(13,59,110,0.12)');
+        wctx.fillStyle = skyGrad;
+        wctx.fillRect(0, 0, W, H);
+
+        waveLayers.forEach((layer) => {
+            const baseY = H * layer.yOffset;
+            wctx.beginPath();
+            wctx.moveTo(0, H);
+
+            // Draw smooth sinusoidal wave using many small steps
+            for (let x = 0; x <= W; x += 2) {
+                // Combine two sine waves with slight frequency variation for natural look
+                const y = baseY
+                    + Math.sin(x * layer.freq + wt * layer.speed + layer.phase) * layer.amp
+                    + Math.sin(x * layer.freq * 1.7 + wt * layer.speed * 0.6 + layer.phase + 1) * (layer.amp * 0.4)
+                    + Math.sin(x * layer.freq * 0.5 + wt * layer.speed * 1.3 + layer.phase + 2.2) * (layer.amp * 0.25);
+                wctx.lineTo(x, y);
+            }
+
+            wctx.lineTo(W, H);
+            wctx.closePath();
+
+            // Gradient fill per wave layer for depth
+            const grad = wctx.createLinearGradient(0, baseY - layer.amp, 0, H);
+            grad.addColorStop(0, layer.color.replace(')', ', 0.6)').replace('rgba', 'rgba').replace(/, 0\.6\)$/, ')'));
+            grad.addColorStop(1, layer.color);
+            wctx.fillStyle = layer.color;
+            wctx.fill();
+
+            // Subtle highlight on wave crest
+            wctx.beginPath();
+            for (let x = 0; x <= W; x += 2) {
+                const y = baseY
+                    + Math.sin(x * layer.freq + wt * layer.speed + layer.phase) * layer.amp
+                    + Math.sin(x * layer.freq * 1.7 + wt * layer.speed * 0.6 + layer.phase + 1) * (layer.amp * 0.4)
+                    + Math.sin(x * layer.freq * 0.5 + wt * layer.speed * 1.3 + layer.phase + 2.2) * (layer.amp * 0.25);
+                if (x === 0) wctx.moveTo(x, y);
+                else wctx.lineTo(x, y);
+            }
+            wctx.strokeStyle = 'rgba(255,255,255,0.06)';
+            wctx.lineWidth = 1.5;
+            wctx.stroke();
+        });
+
+        wt += 0.012;
+        requestAnimationFrame(drawWaves);
+    }
+    drawWaves();
+</script>
 </body>
 </html>
